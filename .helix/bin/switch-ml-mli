@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+file="$1"
+
+case "$file" in
+  *.mli)
+    printf '%s\n' "${file%.mli}.ml"
+    ;;
+  *.ml)
+    printf '%s\n' "${file%.ml}.mli"
+    ;;
+  *)
+    printf '%s\n' "$file"
+    ;;
+esac

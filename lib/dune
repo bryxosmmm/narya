@@ -1,0 +1,5 @@
+(library
+ (name narya)
+ (libraries base stdio)
+ (preprocess
+  (pps ppx_jane)))

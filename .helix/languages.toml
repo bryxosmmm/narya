@@ -1,0 +1,4 @@
+[[language]]
+name = "ocaml"
+auto-format = true
+formatter = { command = "ocamlformat", args = ["--enable-outside-detected-project", "--name", "file.ml", "-"] }
