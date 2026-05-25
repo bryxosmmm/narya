@@ -1,3 +1,6 @@
-(test
+(library
  (name test_narya)
- (libraries narya))
+ (libraries core narya)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
