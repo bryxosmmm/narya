@@ -5,6 +5,9 @@ type t
 val create : int array -> float -> t
 val zeros : int array -> t
 val ones : int array -> t
+val copy: t -> t
+val zeros_like: t -> t
+val ones_like: t -> t
 
 val of_array : shape:int array -> float array -> t
 val to_array: t -> float array
@@ -32,8 +35,8 @@ val mul' : t -> float -> t
 val div' : t -> float -> t
 
 
-val sum : t -> float
-val mean : t -> float
+val sum : t -> t
+val mean : t -> t
 
 val reshape : t -> shape:int array -> t
 val unsqueeze: t -> axis:int -> t

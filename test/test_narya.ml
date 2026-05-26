@@ -1,5 +1,6 @@
 open! Core
 module A = Narya.Ndarray
+module T = Narya.Tensor
 
 let print_array f v = print_s (Array.sexp_of_t f v)
 

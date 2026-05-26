@@ -45,6 +45,10 @@ let create shape v =
 
 let zeros shape = create shape 0.0
 let ones shape = create shape 1.0
+let like x v = { x with data = Array.init x.numel ~f:(fun _ -> v) }
+let zeros_like x = like x 0.0
+let ones_like x = like x 1.0
+let copy x = { x with data = Array.copy x.data }
 
 let index x idx =
   let offset = x.offset in
@@ -99,15 +103,12 @@ let sub' a s = map a ~f:(fun x -> x -. s)
 let mul' a s = map a ~f:(fun x -> x *. s)
 let div' a s = map a ~f:(fun x -> x /. s)
 let neg a = map a ~f:Float.neg
-
-(* val sum : t -> float *)
-(* val mean : t -> float *)
-let sum x = Array.fold x.data ~init:0.0 ~f:( +. )
+let sum x = Array.fold x.data ~init:0.0 ~f:( +. ) |> create [||]
 
 let mean x =
   if x.numel = 0
   then invalid_arg "Ndarray.mean: empty array"
-  else sum x /. Float.of_int x.numel
+  else div' (sum x) (Float.of_int x.numel)
 ;;
 
 let transpose x =
