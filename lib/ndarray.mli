@@ -3,6 +3,9 @@ open! Base
 type t
 
 val create : int array -> float -> t
+val full : int array -> float -> t
+val scalar : float -> t
+val s : float -> t
 val zeros : int array -> t
 val ones : int array -> t
 val copy: t -> t
@@ -24,22 +27,36 @@ val update : t -> int array -> f:(float -> float) -> unit
 val map : t -> f:(float -> float) -> t
 val map2 : t -> t -> f:(float -> float -> float) -> t
 
+val broadcast_shape : int array -> int array -> int array
+val broadcast_to : t -> shape:int array -> t
+
 val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val neg : t -> t
-val add' : t -> float -> t
-val sub' : t -> float -> t
-val mul' : t -> float -> t
-val div' : t -> float -> t
 
+module Infix : sig
+  val ( + ) : t -> t -> t
+  val ( - ) : t -> t -> t
+  val ( * ) : t -> t -> t
+  val ( / ) : t -> t -> t
+  val ( ~- ) : t -> t
+  val ( @ ) : t -> t -> t
+end
 
 val sum : t -> t
 val mean : t -> t
+val sum_axis : ?keepdim:bool -> t -> axis:int -> t
+val mean_axis : ?keepdim:bool -> t -> axis:int -> t
+val sum_to_shape : t -> shape:int array -> t
 
 val reshape : t -> shape:int array -> t
 val unsqueeze: t -> axis:int -> t
 
 val transpose : t -> t
 val matmul : t -> t -> t
+
+val arange : int -> t
+val linspace : start:float -> stop:float -> num:int -> t
+val eye : int -> t
