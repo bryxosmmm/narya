@@ -32,7 +32,13 @@ let comp_strides shape =
 ;;
 
 let make_unchecked ~data ~shape ~strides ~offset =
-  { data; shape; strides; offset; ndim = Array.length shape; numel = comp_numel shape }
+  { data
+  ; shape
+  ; strides
+  ; offset
+  ; ndim = Array.length shape
+  ; numel = comp_numel shape
+  }
 ;;
 
 let make_contiguous_unchecked ~shape ~data =
@@ -52,7 +58,8 @@ let unravel_index shape flat =
 
 let flat_index shape idx =
   let strides = comp_strides shape in
-  Array.fold2_exn idx strides ~init:0 ~f:(fun acc i stride -> acc + (i * stride))
+  Array.fold2_exn idx strides ~init:0 ~f:(fun acc i stride ->
+    acc + (i * stride))
 ;;
 
 let insert_axis idx ~axis ~value ~ndim =
@@ -62,10 +69,13 @@ let insert_axis idx ~axis ~value ~ndim =
 
 let reduced_shape shape ~axis ~keepdim =
   let ndim = Array.length shape in
-  if axis < 0 || axis >= ndim then invalid_arg "Ndarray.sum_axis: axis out of bounds";
+  if axis < 0 || axis >= ndim
+  then invalid_arg "Ndarray.sum_axis: axis out of bounds";
   if keepdim
   then Array.mapi shape ~f:(fun i dim -> if i = axis then 1 else dim)
-  else Array.init (ndim - 1) ~f:(fun i -> if i < axis then shape.(i) else shape.(i + 1))
+  else
+    Array.init (ndim - 1) ~f:(fun i ->
+      if i < axis then shape.(i) else shape.(i + 1))
 ;;
 
 let create shape v =
@@ -84,7 +94,8 @@ let of_array ~shape data =
   let shape = Array.copy shape in
   let data = Array.copy data in
   let numel = comp_numel shape in
-  if numel <> Array.length data then invalid_arg "Ndarray.of_array: shape mismatch";
+  if numel <> Array.length data
+  then invalid_arg "Ndarray.of_array: shape mismatch";
   make_contiguous_unchecked ~shape ~data
 ;;
 
@@ -110,7 +121,8 @@ let linspace ~start ~stop ~num =
 let eye n =
   let shape = [| n; n |] in
   let data =
-    Array.init (n * n) ~f:(fun i -> (if i % (n + 1) = 0 then 1 else 0) |> Float.of_int)
+    Array.init (n * n) ~f:(fun i ->
+      (if i % (n + 1) = 0 then 1 else 0) |> Float.of_int)
   in
   make_contiguous_unchecked ~shape ~data
 ;;
@@ -119,7 +131,9 @@ let index x idx =
   let offset = x.offset in
   let s = x.strides in
   let n = x.ndim in
-  let rec aux i = if i >= n then offset else (s.(i) * idx.(i)) + aux (i + 1) in
+  let rec aux i =
+    if i >= n then offset else (s.(i) * idx.(i)) + aux (i + 1)
+  in
   aux 0
 ;;
 
@@ -137,7 +151,10 @@ let index_flat x flat =
 let get x idx = x.data.(index x idx)
 let set x idx v = x.data.(index x idx) <- v
 let get_flat x flat = x.data.(index_flat x flat)
-let get2 x i j = x.data.((i * x.strides.(0)) + (j * x.strides.(1)) + x.offset)
+
+let get2 x i j =
+  x.data.((i * x.strides.(0)) + (j * x.strides.(1)) + x.offset)
+;;
 
 let update x idx ~f =
   let i = index x idx in
@@ -146,7 +163,10 @@ let update x idx ~f =
 
 let to_array x = Array.init x.numel ~f:(fun i -> get_flat x i)
 let is_contiguous x = same_shape x.strides (comp_strides x.shape)
-let copy x = make_contiguous_unchecked ~shape:(Array.copy x.shape) ~data:(to_array x)
+
+let copy x =
+  make_contiguous_unchecked ~shape:(Array.copy x.shape) ~data:(to_array x)
+;;
 
 let like x v =
   make_contiguous_unchecked
@@ -158,29 +178,45 @@ let zeros_like x = like x 0.0
 let ones_like x = like x 1.0
 
 let reshape x ~shape =
-  if not (is_contiguous x) then invalid_arg "Ndarray.reshape: non-contiguous view";
+  if not (is_contiguous x)
+  then invalid_arg "Ndarray.reshape: non-contiguous view";
   let shape = Array.copy shape in
   let numel = comp_numel shape in
   if x.numel <> numel then invalid_arg "Ndarray.reshape: shape mismatch";
-  { x with numel; shape; strides = comp_strides shape; ndim = Array.length shape }
+  { x with
+    numel
+  ; shape
+  ; strides = comp_strides shape
+  ; ndim = Array.length shape
+  }
 ;;
 
 let unsqueeze x ~axis =
-  if axis < 0 || axis > x.ndim then invalid_arg "Ndarray.unsqueeze: axis out of bounds";
+  if axis < 0 || axis > x.ndim
+  then invalid_arg "Ndarray.unsqueeze: axis out of bounds";
   let ndim = x.ndim + 1 in
   let shape =
     Array.init ndim ~f:(fun i ->
-      if i < axis then x.shape.(i) else if i = axis then 1 else x.shape.(i - 1))
+      if i < axis
+      then x.shape.(i)
+      else if i = axis
+      then 1
+      else x.shape.(i - 1))
   in
   let strides =
     Array.init ndim ~f:(fun i ->
-      if i < axis then x.strides.(i) else if i = axis then 0 else x.strides.(i - 1))
+      if i < axis
+      then x.strides.(i)
+      else if i = axis
+      then 0
+      else x.strides.(i - 1))
   in
   { x with shape; ndim; strides; numel = x.numel }
 ;;
 
 let transpose x =
-  if x.ndim <> 2 then invalid_arg "Ndarray.transpose: number of dimensions <> 2";
+  if x.ndim <> 2
+  then invalid_arg "Ndarray.transpose: number of dimensions <> 2";
   { x with
     shape = [| x.shape.(1); x.shape.(0) |]
   ; strides = [| x.strides.(1); x.strides.(0) |]
@@ -208,7 +244,8 @@ let broadcast_shape a b =
 let broadcast_to x ~shape =
   let shape = Array.copy shape in
   let ndim = Array.length shape in
-  if ndim < x.ndim then invalid_arg "Ndarray.broadcast_to: target rank too small";
+  if ndim < x.ndim
+  then invalid_arg "Ndarray.broadcast_to: target rank too small";
   let shift = ndim - x.ndim in
   let strides =
     Array.init ndim ~f:(fun i ->
@@ -235,7 +272,8 @@ let map2 x y ~f =
   let x = broadcast_to x ~shape in
   let y = broadcast_to y ~shape in
   let data =
-    Array.init (comp_numel shape) ~f:(fun i -> f (get_flat x i) (get_flat y i))
+    Array.init (comp_numel shape) ~f:(fun i ->
+      f (get_flat x i) (get_flat y i))
   in
   make_contiguous_unchecked ~shape ~data
 ;;
@@ -268,7 +306,9 @@ let sum_axis ?(keepdim = false) x ~axis =
       in
       let acc = ref 0.0 in
       for i = 0 to x.shape.(axis) - 1 do
-        let idx = insert_axis out_idx_no_keepdim ~axis ~value:i ~ndim:x.ndim in
+        let idx =
+          insert_axis out_idx_no_keepdim ~axis ~value:i ~ndim:x.ndim
+        in
         acc := !acc +. get x idx
       done;
       !acc)
@@ -277,14 +317,16 @@ let sum_axis ?(keepdim = false) x ~axis =
 ;;
 
 let mean_axis ?(keepdim = false) x ~axis =
-  if axis < 0 || axis >= x.ndim then invalid_arg "Ndarray.mean_axis: axis out of bounds";
+  if axis < 0 || axis >= x.ndim
+  then invalid_arg "Ndarray.mean_axis: axis out of bounds";
   div (sum_axis x ~axis ~keepdim) (scalar (Float.of_int x.shape.(axis)))
 ;;
 
 let sum_to_shape x ~shape =
   let shape = Array.copy shape in
   let ndim = Array.length shape in
-  if ndim > x.ndim then invalid_arg "Ndarray.sum_to_shape: target rank too large";
+  if ndim > x.ndim
+  then invalid_arg "Ndarray.sum_to_shape: target rank too large";
   let shift = x.ndim - ndim in
   for i = 0 to ndim - 1 do
     let x_dim = x.shape.(i + shift) in
@@ -296,7 +338,8 @@ let sum_to_shape x ~shape =
   for flat = 0 to x.numel - 1 do
     let x_idx = unravel_index x.shape flat in
     let out_idx =
-      Array.init ndim ~f:(fun i -> if shape.(i) = 1 then 0 else x_idx.(i + shift))
+      Array.init ndim ~f:(fun i ->
+        if shape.(i) = 1 then 0 else x_idx.(i + shift))
     in
     let out_flat = flat_index shape out_idx in
     data.(out_flat) <- data.(out_flat) +. get x x_idx
@@ -305,9 +348,12 @@ let sum_to_shape x ~shape =
 ;;
 
 let matmul a b =
-  if a.ndim <> 2 then invalid_arg "Ndarray.matmul: left argument must be 2D";
-  if b.ndim <> 2 then invalid_arg "Ndarray.matmul: right argument must be 2D";
-  if a.shape.(1) <> b.shape.(0) then invalid_arg "Ndarray.matmul: shape mismatch";
+  if a.ndim <> 2
+  then invalid_arg "Ndarray.matmul: left argument must be 2D";
+  if b.ndim <> 2
+  then invalid_arg "Ndarray.matmul: right argument must be 2D";
+  if a.shape.(1) <> b.shape.(0)
+  then invalid_arg "Ndarray.matmul: shape mismatch";
   let m = a.shape.(0) in
   let k = a.shape.(1) in
   let n = b.shape.(1) in
@@ -317,7 +363,9 @@ let matmul a b =
       let i = flat / n in
       let j = flat % n in
       let rec aux p acc =
-        if p >= k then acc else aux (p + 1) (acc +. (get2 a i p *. get2 b p j))
+        if p >= k
+        then acc
+        else aux (p + 1) (acc +. (get2 a i p *. get2 b p j))
       in
       aux 0 0.0)
   in

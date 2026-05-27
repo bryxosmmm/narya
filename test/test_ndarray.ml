@@ -57,7 +57,8 @@ let%expect_test "broadcast_shape" =
   print_s [%sexp (A.broadcast_shape [| 3; 1 |] [| 1; 4 |] : int array)];
   print_s [%sexp (A.broadcast_shape [| 3 |] [| 2; 3 |] : int array)];
   print_s [%sexp (A.broadcast_shape [||] [| 2; 3 |] : int array)];
-  [%expect {|
+  [%expect
+    {|
     (3 4)
     (2 3)
     (2 3) |}]
@@ -76,13 +77,16 @@ let%expect_test "broadcasted set aliases repeated values" =
   A.set y [| 1; 1 |] 20.;
   print_array Float.sexp_of_t (A.to_array x);
   print_array Float.sexp_of_t (A.to_array y);
-  [%expect {|
+  [%expect
+    {|
     (1 20 3)
     (1 20 3 1 20 3) |}]
 ;;
 
 let%expect_test "map2 broadcasts vector over matrix" =
-  let x = A.of_array ~shape:[| 2; 3 |] [| 10.; 20.; 30.; 40.; 50.; 60. |] in
+  let x =
+    A.of_array ~shape:[| 2; 3 |] [| 10.; 20.; 30.; 40.; 50.; 60. |]
+  in
   let y = A.of_array ~shape:[| 3 |] [| 1.; 2.; 3. |] in
   let z = A.add x y in
   print_s [%sexp (A.shape z : int array), (A.to_array z : float array)];
