@@ -122,3 +122,22 @@ let mean a =
   ; requires_grad = a.requires_grad
   }
 ;;
+
+let topo_sort root =
+  let vis = ref [] in
+  let t = ref [] in
+  let rec dfs u =
+    if not (List.exists !vis ~f:(phys_equal u))
+    then (
+      vis := u :: !vis;
+      List.iter u.parents ~f:dfs;
+      t := u :: !t)
+  in
+  dfs root;
+  !t
+;;
+
+let backward x =
+  x.grad <- Some (Ndarray.ones_like x.value);
+  List.iter (topo_sort x) ~f:(fun v -> Option.iter v.grad ~f:v.backward)
+;;
