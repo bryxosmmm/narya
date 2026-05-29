@@ -296,10 +296,27 @@ let le a b = map2 a b ~f:(fun x y -> if Float.(x <= y) then 1.0 else 0.0)
 let neg a = map a ~f:Float.neg
 let sum x = Array.fold (to_array x) ~init:0.0 ~f:( +. ) |> scalar
 
+let max x =
+  if x.numel = 0
+  then invalid_arg "Ndarray.max: empty array"
+  else Array.reduce_exn (to_array x) ~f:Float.max |> scalar
+;;
+
+let min x =
+  if x.numel = 0
+  then invalid_arg "Ndarray.min: empty array"
+  else Array.reduce_exn (to_array x) ~f:Float.min |> scalar
+;;
+
 let mean x =
   if x.numel = 0
   then invalid_arg "Ndarray.mean: empty array"
   else div (sum x) (scalar (Float.of_int x.numel))
+;;
+
+let softmax x =
+  let e = exp (sub x (max x)) in
+  div e (sum e)
 ;;
 
 let sum_axis ?(keepdim = false) x ~axis =

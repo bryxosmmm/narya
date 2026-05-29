@@ -11,6 +11,8 @@ val value : t -> Ndarray.t
 val grad : t -> Ndarray.t option
 val grad_exn : t -> Ndarray.t
 val requires_grad : t -> bool
+val zero_grad : t -> unit
+val update : t -> f:(Ndarray.t -> Ndarray.t) -> unit
 
 val add : t -> t -> t
 val sub : t -> t -> t
@@ -24,6 +26,7 @@ val exp : t -> t
 val log : t -> t
 val tanh : t -> t
 val sigmoid : t -> t
+val softmax : t -> t
 val relu : t -> t
 val sum : t -> t
 val mean : t -> t

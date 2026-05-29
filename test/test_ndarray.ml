@@ -125,6 +125,33 @@ let%expect_test "exp log tanh sigmoid" =
     (0.5 0.7310585786300049 0.2689414213699951) |}]
 ;;
 
+let%expect_test "max min" =
+  let x = A.of_array ~shape:[| 2; 3 |] [| 1.; -2.; 3.; 4.; 0.; -1. |] in
+  print_s [%sexp (A.shape (A.max x) : int array), (A.to_array (A.max x) : float array)];
+  print_s [%sexp (A.shape (A.min x) : int array), (A.to_array (A.min x) : float array)];
+  [%expect {|
+    (() (4))
+    (() (-2)) |}]
+;;
+
+let%expect_test "softmax" =
+  let x = A.of_array ~shape:[| 3 |] [| 1.; 2.; 3. |] in
+  let y = A.softmax x in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  print_s [%sexp (A.to_array (A.sum y) : float array)];
+  [%expect
+    {|
+    ((3) (0.090030573170380462 0.24472847105479764 0.66524095577482178))
+    (0.99999999999999989) |}]
+;;
+
+let%expect_test "softmax is stable for large values" =
+  let x = A.of_array ~shape:[| 3 |] [| 1000.; 1001.; 1002. |] in
+  let y = A.softmax x in
+  print_s [%sexp (A.to_array y : float array)];
+  [%expect {| (0.090030573170380462 0.24472847105479764 0.66524095577482178) |}]
+;;
+
 let%expect_test "maximum minimum and comparisons" =
   let x = A.of_array ~shape:[| 4 |] [| -1.; 0.; 2.; 3. |] in
   let y = A.of_array ~shape:[| 4 |] [| 0.; 0.; 1.; 4. |] in

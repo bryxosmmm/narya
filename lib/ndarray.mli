@@ -32,6 +32,7 @@ val exp : t -> t
 val log : t -> t
 val tanh : t -> t
 val sigmoid : t -> t
+val softmax : t -> t
 val maximum : t -> t -> t
 val minimum : t -> t -> t
 val gt : t -> t -> t
@@ -56,6 +57,8 @@ end
 
 val sum : t -> t
 val mean : t -> t
+val max : t -> t
+val min : t -> t
 val sum_axis : ?keepdim:bool -> t -> axis:int -> t
 val mean_axis : ?keepdim:bool -> t -> axis:int -> t
 val sum_to_shape : t -> shape:int array -> t
