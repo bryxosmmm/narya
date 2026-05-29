@@ -101,6 +101,44 @@ let%expect_test "map2 broadcasts scalar" =
   [%expect {| ((2 2) (10 20 30 40)) |}]
 ;;
 
+let%expect_test "powf" =
+  let open A.Infix in
+  let x = A.of_array ~shape:[| 3 |] [| 2.; 3.; 4. |] in
+  print_s [%sexp (A.to_array (A.powf x 2.0) : float array)];
+  print_s [%sexp (A.to_array (x ^ 3.0) : float array)];
+  [%expect {|
+    (4 9 16)
+    (8 27 64) |}]
+;;
+
+let%expect_test "maximum minimum and comparisons" =
+  let x = A.of_array ~shape:[| 4 |] [| -1.; 0.; 2.; 3. |] in
+  let y = A.of_array ~shape:[| 4 |] [| 0.; 0.; 1.; 4. |] in
+  print_s [%sexp (A.to_array (A.maximum x y) : float array)];
+  print_s [%sexp (A.to_array (A.minimum x y) : float array)];
+  print_s [%sexp (A.to_array (A.gt x y) : float array)];
+  print_s [%sexp (A.to_array (A.ge x y) : float array)];
+  print_s [%sexp (A.to_array (A.lt x y) : float array)];
+  print_s [%sexp (A.to_array (A.le x y) : float array)];
+  [%expect {|
+    (0 0 2 4)
+    (-1 0 1 3)
+    (0 0 1 0)
+    (0 1 1 0)
+    (1 0 0 1)
+    (1 1 0 1) |}]
+;;
+
+let%expect_test "comparison infix broadcasts scalar" =
+  let open A.Infix in
+  let x = A.of_array ~shape:[| 3 |] [| -1.; 0.; 1. |] in
+  print_s [%sexp (A.to_array (x > A.s 0.0) : float array)];
+  print_s [%sexp (A.to_array (x <= A.s 0.0) : float array)];
+  [%expect {|
+    (0 0 1)
+    (1 1 0) |}]
+;;
+
 let%expect_test "arange" =
   let x = A.arange 5 in
   print_s [%sexp (A.shape x : int array), (A.to_array x : float array)];

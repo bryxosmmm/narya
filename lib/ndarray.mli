@@ -27,6 +27,13 @@ val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
+val powf : t -> float -> t
+val maximum : t -> t -> t
+val minimum : t -> t -> t
+val gt : t -> t -> t
+val ge : t -> t -> t
+val lt : t -> t -> t
+val le : t -> t -> t
 val neg : t -> t
 
 module Infix : sig
@@ -34,6 +41,11 @@ module Infix : sig
   val ( - ) : t -> t -> t
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
+  val ( ^ ) : t -> float -> t
+  val ( > ) : t -> t -> t
+  val ( >= ) : t -> t -> t
+  val ( < ) : t -> t -> t
+  val ( <= ) : t -> t -> t
   val ( ~- ) : t -> t
   val ( @ ) : t -> t -> t
 end

@@ -15,8 +15,15 @@ val requires_grad : t -> bool
 val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
+val div : t -> t -> t
+val matmul : t -> t -> t
 val neg : t -> t
+val square : t -> t
+val powf : t -> float -> t
+val relu : t -> t
 val sum : t -> t
 val mean : t -> t
+val sum_axis : ?keepdim:bool -> t -> axis:int -> t
+val mean_axis : ?keepdim:bool -> t -> axis:int -> t
 
 val backward : t -> unit

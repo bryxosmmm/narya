@@ -282,6 +282,13 @@ let add a b = map2 a b ~f:( +. )
 let sub a b = map2 a b ~f:( -. )
 let mul a b = map2 a b ~f:( *. )
 let div a b = map2 a b ~f:( /. )
+let powf a p = map a ~f:(fun x -> Float.(x ** p))
+let maximum a b = map2 a b ~f:Float.max
+let minimum a b = map2 a b ~f:Float.min
+let gt a b = map2 a b ~f:(fun x y -> if Float.(x > y) then 1.0 else 0.0)
+let ge a b = map2 a b ~f:(fun x y -> if Float.(x >= y) then 1.0 else 0.0)
+let lt a b = map2 a b ~f:(fun x y -> if Float.(x < y) then 1.0 else 0.0)
+let le a b = map2 a b ~f:(fun x y -> if Float.(x <= y) then 1.0 else 0.0)
 let neg a = map a ~f:Float.neg
 let sum x = Array.fold (to_array x) ~init:0.0 ~f:( +. ) |> scalar
 
@@ -377,6 +384,11 @@ module Infix = struct
   let ( - ) = sub
   let ( * ) = mul
   let ( / ) = div
+  let ( ^ ) = powf
+  let ( > ) = gt
+  let ( >= ) = ge
+  let ( < ) = lt
+  let ( <= ) = le
   let ( ~- ) = neg
   let ( @ ) = matmul
 end

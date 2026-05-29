@@ -1,6 +1,3 @@
 open Stdio
 
-let () =
-  print_endline "something";
-  print_endline "Hello, Narya!"
-;;
+let () = print_endline "Hello, Narya!"

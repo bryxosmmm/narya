@@ -201,3 +201,135 @@ let%expect_test "non-scalar backward seeds ones_like" =
   print_tensor_grad x;
   [%expect {| ((2 2) (2 4 6 8)) |}]
 ;;
+
+let%expect_test "relu forward clamps at zero" =
+  let x = T.of_ndarray (A.of_array ~shape:[| 5 |] [| -2.; -0.5; 0.; 0.5; 3. |]) in
+  let y = T.relu x in
+  print_tensor_value y;
+  [%expect {| ((5) (0 0 0 0.5 3)) |}]
+;;
+
+let%expect_test "relu backward uses positive mask" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 5 |] [| -2.; -0.5; 0.; 0.5; 3. |])
+  in
+  let y = T.sum (T.relu x) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((5) (0 0 0 1 1)) |}]
+;;
+
+let%expect_test "matmul forward" =
+  let a = T.of_ndarray (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |]) in
+  let b = T.of_ndarray (A.of_array ~shape:[| 3; 2 |] [| 7.; 8.; 9.; 10.; 11.; 12. |]) in
+  let c = T.matmul a b in
+  print_tensor_value c;
+  [%expect {| ((2 2) (58 64 139 154)) |}]
+;;
+
+let%expect_test "matmul backward" =
+  let a =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let b =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 3; 2 |] [| 7.; 8.; 9.; 10.; 11.; 12. |])
+  in
+  let loss = T.sum (T.matmul a b) in
+  T.backward loss;
+  print_tensor_grad a;
+  print_tensor_grad b;
+  [%expect {|
+    ((2 3) (15 19 23 15 19 23))
+    ((3 2) (5 5 7 7 9 9)) |}]
+;;
+
+let%expect_test "div forward and backward" =
+  let x = T.scalar ~requires_grad:true 6.0 in
+  let y = T.scalar ~requires_grad:true 3.0 in
+  let z = T.div x y in
+  T.backward z;
+  print_tensor_value z;
+  print_tensor_grad x;
+  print_tensor_grad y;
+  [%expect {|
+    (() (2))
+    (() (0.33333333333333331))
+    (() (-0.66666666666666663))
+    |}]
+;;
+
+let%expect_test "square forward and backward" =
+  let x = T.scalar ~requires_grad:true 3.0 in
+  let y = T.square x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (9))
+    (() (6)) |}]
+;;
+
+let%expect_test "powf forward and backward" =
+  let x = T.scalar ~requires_grad:true 2.0 in
+  let y = T.powf x 3.0 in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (8))
+    (() (12)) |}]
+;;
+
+let%expect_test "sum_axis backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.sum (T.sum_axis x ~axis:1) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((2 3) (1 1 1 1 1 1)) |}]
+;;
+
+let%expect_test "sum_axis keepdim backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.sum (T.sum_axis x ~axis:1 ~keepdim:true) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((2 3) (1 1 1 1 1 1)) |}]
+;;
+
+let%expect_test "mean_axis backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.sum (T.mean_axis x ~axis:1) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((2 3) (0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315)) |}]
+;;
+
+let%expect_test "mean_axis keepdim backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.sum (T.mean_axis x ~axis:1 ~keepdim:true) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((2 3) (0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315 0.333333333333333315)) |}]
+;;
