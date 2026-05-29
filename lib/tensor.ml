@@ -201,5 +201,36 @@ let backward x =
   List.iter (topo_sort x) ~f:(fun v -> Option.iter v.grad ~f:v.backward)
 ;;
 
-let sum_axis ?(keepdim = false) x ~axis = x
-let mean_axis ?(keepdim = false) x ~axis = x
+let sum_axis ?(keepdim = false) a ~axis =
+  let open Ndarray in
+  let value = sum_axis ~keepdim a.value ~axis in
+  let parents = [ a ] in
+  let backward g =
+    let g = Bool.select keepdim g (unsqueeze g ~axis) in
+    add_grad a (broadcast_to g ~shape:(shape a.value))
+  in
+  { value
+  ; parents
+  ; backward
+  ; grad = None
+  ; requires_grad = a.requires_grad
+  }
+;;
+
+let mean_axis ?(keepdim = false) a ~axis =
+  let open Ndarray in
+  let open Infix in
+  let value = mean_axis ~keepdim a.value ~axis in
+  let parents = [ a ] in
+  let backward g =
+    let n = (shape a.value).(axis) |> Float.of_int |> s in
+    let g = Bool.select keepdim g (unsqueeze g ~axis) in
+    add_grad a (broadcast_to g ~shape:(shape a.value) / n)
+  in
+  { value
+  ; parents
+  ; backward
+  ; grad = None
+  ; requires_grad = a.requires_grad
+  }
+;;
