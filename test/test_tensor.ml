@@ -6,6 +6,50 @@ let print_ndarray x = print_s [%sexp (A.shape x : int array), (A.to_array x : fl
 let print_tensor_value x = print_ndarray (T.value x)
 let print_tensor_grad x = print_ndarray (T.grad_exn x)
 
+let%expect_test "exp forward and backward" =
+  let x = T.scalar ~requires_grad:true 0.0 in
+  let y = T.exp x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (1))
+    (() (1)) |}]
+;;
+
+let%expect_test "log forward and backward" =
+  let x = T.scalar ~requires_grad:true 1.0 in
+  let y = T.log x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (0))
+    (() (1)) |}]
+;;
+
+let%expect_test "tanh forward and backward" =
+  let x = T.scalar ~requires_grad:true 0.0 in
+  let y = T.tanh x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (0))
+    (() (1)) |}]
+;;
+
+let%expect_test "sigmoid forward and backward" =
+  let x = T.scalar ~requires_grad:true 0.0 in
+  let y = T.sigmoid x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (0.5))
+    (() (0.25)) |}]
+;;
+
 let%expect_test "scalar add value" =
   let x = T.scalar 2.0 in
   let y = T.scalar 3.0 in

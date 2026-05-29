@@ -28,6 +28,10 @@ val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val powf : t -> float -> t
+val exp : t -> t
+val log : t -> t
+val tanh : t -> t
+val sigmoid : t -> t
 val maximum : t -> t -> t
 val minimum : t -> t -> t
 val gt : t -> t -> t

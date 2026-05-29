@@ -38,149 +38,128 @@ let add_grad x g =
     | Some old -> x.grad <- Some (old + g))
 ;;
 
-let add a b =
-  let open Ndarray in
-  let open Infix in
-  let requires_grad = a.requires_grad || b.requires_grad in
-  let value = a.value + b.value in
-  let parents = [ a; b ] in
-  let backward g =
-    add_grad a g;
-    add_grad b g
-  in
-  { value; parents; backward; grad = None; requires_grad }
-;;
-
-let neg a =
-  let open Ndarray in
-  let open Infix in
-  let value = neg a.value in
-  let parents = [ a ] in
-  let backward g = add_grad a (neg g) in
+let op'1 x ~f ~f' =
+  let value = f x.value in
+  let parents = [ x ] in
+  let backward g = add_grad x (f' x.value value g) in
   { value
   ; parents
   ; backward
   ; grad = None
-  ; requires_grad = a.requires_grad
+  ; requires_grad = x.requires_grad
   }
+;;
+
+let op'2 a b ~f ~f'a ~f'b =
+  let value = f a.value b.value in
+  let parents = [ a; b ] in
+  let backward g =
+    add_grad a (f'a a.value b.value value g);
+    add_grad b (f'b a.value b.value value g)
+  in
+  { value
+  ; parents
+  ; backward
+  ; grad = None
+  ; requires_grad = a.requires_grad || b.requires_grad
+  }
+;;
+
+let add a b =
+  let open Ndarray in
+  let open Infix in
+  op'2 a b ~f:( + ) ~f'a:(fun _ _ _ g -> g) ~f'b:(fun _ _ _ g -> g)
+;;
+
+let neg a =
+  let open Ndarray in
+  op'1 a ~f:neg ~f':(fun _ _ g -> neg g)
 ;;
 
 let relu a =
   let open Ndarray in
   let open Infix in
-  let value = maximum a.value (s 0.0) in
-  let parents = [ a ] in
-  let backward g = add_grad a ((a.value > s 0.0) * g) in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1 a ~f:(fun x -> maximum x (s 0.0)) ~f':(fun x _ g -> (x > s 0.0) * g)
 ;;
 
 let sub a b =
   let open Ndarray in
   let open Infix in
-  let requires_grad = a.requires_grad || b.requires_grad in
-  let value = a.value - b.value in
-  let parents = [ a; b ] in
-  let backward g =
-    add_grad a g;
-    add_grad b (neg g)
-  in
-  { value; parents; backward; grad = None; requires_grad }
+  op'2 a b ~f:( - ) ~f'a:(fun _ _ _ g -> g) ~f'b:(fun _ _ _ g -> neg g)
 ;;
 
 let mul a b =
   let open Ndarray in
   let open Infix in
-  let requires_grad = a.requires_grad || b.requires_grad in
-  let value = a.value * b.value in
-  let parents = [ a; b ] in
-  let backward g =
-    add_grad a (g * b.value);
-    add_grad b (g * a.value)
-  in
-  { value; parents; backward; grad = None; requires_grad }
+  op'2 a b ~f:( * ) ~f'a:(fun _ b _ g -> g * b) ~f'b:(fun a _ _ g -> g * a)
 ;;
 
 let div a b =
   let open Ndarray in
   let open Infix in
-  let requires_grad = a.requires_grad || b.requires_grad in
-  let value = a.value / b.value in
-  let parents = [ a; b ] in
-  let backward g =
-    add_grad a (g / b.value);
-    add_grad b (s (-1.) * g * a.value / (b.value * b.value))
-  in
-  { value; parents; backward; grad = None; requires_grad }
+  op'2
+    a
+    b
+    ~f:( / )
+    ~f'a:(fun _ b _ g -> g / b)
+    ~f'b:(fun a b _ g -> s (-1.) * g * a / (b * b))
 ;;
 
 let matmul a b =
   let open Ndarray in
   let open Infix in
-  let requires_grad = a.requires_grad || b.requires_grad in
-  let value = a.value @ b.value in
-  let parents = [ a; b ] in
-  let backward g =
-    add_grad a (g @ transpose b.value);
-    add_grad b (transpose a.value @ g)
-  in
-  { value; parents; backward; grad = None; requires_grad }
+  op'2
+    a
+    b
+    ~f:( @ )
+    ~f'a:(fun _ b _ g -> g @ transpose b)
+    ~f'b:(fun a _ _ g -> transpose a @ g)
 ;;
 
 let sum a =
   let open Ndarray in
-  let open Infix in
-  let value = sum a.value in
-  let parents = [ a ] in
-  let backward g = add_grad a (broadcast_to g ~shape:(shape a.value)) in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1 a ~f:sum ~f':(fun x _ g -> broadcast_to g ~shape:(shape x))
 ;;
 
 let mean a =
   let open Ndarray in
   let open Infix in
-  let value = mean a.value in
-  let parents = [ a ] in
-  let backward g =
-    let n = numel a.value |> Float.of_int |> s in
-    let g = broadcast_to g ~shape:(shape a.value) in
-    add_grad a (g / n)
-  in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1 a ~f:mean ~f':(fun x _ g ->
+    let n = numel x |> Float.of_int |> s in
+    broadcast_to g ~shape:(shape x) / n)
 ;;
 
 let powf a p =
   let open Ndarray in
   let open Infix in
-  let value = a.value ^ p in
-  let parents = [ a ] in
-  let backward g =
-    let da = s p * (a.value ^ (p -. 1.)) in
-    add_grad a (da * g)
-  in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1 a ~f:(fun x -> x ^ p) ~f':(fun x _ g -> g * s p * (x ^ (p -. 1.)))
 ;;
 
 let square x = powf x 2.
+
+let exp x =
+  let open Ndarray in
+  let open Infix in
+  op'1 x ~f:exp ~f':(fun _ v g -> g * v)
+;;
+
+let log x =
+  let open Ndarray in
+  let open Infix in
+  op'1 x ~f:log ~f':(fun x _ g -> g / x)
+;;
+
+let tanh x =
+  let open Ndarray in
+  let open Infix in
+  op'1 x ~f:tanh ~f':(fun _ v g -> g * (s 1. - powf v 2.))
+;;
+
+let sigmoid x =
+  let open Ndarray in
+  let open Infix in
+  op'1 x ~f:sigmoid ~f':(fun _ v g -> g * v * (s 1. - v))
+;;
 
 let topo_sort root =
   let vis = ref [] in
@@ -203,34 +182,22 @@ let backward x =
 
 let sum_axis ?(keepdim = false) a ~axis =
   let open Ndarray in
-  let value = sum_axis ~keepdim a.value ~axis in
-  let parents = [ a ] in
-  let backward g =
-    let g = Bool.select keepdim g (unsqueeze g ~axis) in
-    add_grad a (broadcast_to g ~shape:(shape a.value))
-  in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1
+    a
+    ~f:(fun x -> sum_axis ~keepdim x ~axis)
+    ~f':(fun x _ g ->
+      let g = if keepdim then g else unsqueeze g ~axis in
+      broadcast_to g ~shape:(shape x))
 ;;
 
 let mean_axis ?(keepdim = false) a ~axis =
   let open Ndarray in
   let open Infix in
-  let value = mean_axis ~keepdim a.value ~axis in
-  let parents = [ a ] in
-  let backward g =
-    let n = (shape a.value).(axis) |> Float.of_int |> s in
-    let g = Bool.select keepdim g (unsqueeze g ~axis) in
-    add_grad a (broadcast_to g ~shape:(shape a.value) / n)
-  in
-  { value
-  ; parents
-  ; backward
-  ; grad = None
-  ; requires_grad = a.requires_grad
-  }
+  op'1
+    a
+    ~f:(fun x -> mean_axis ~keepdim x ~axis)
+    ~f':(fun x _ g ->
+      let n = (shape x).(axis) |> Float.of_int |> s in
+      let g = if keepdim then g else unsqueeze g ~axis in
+      broadcast_to g ~shape:(shape x) / n)
 ;;

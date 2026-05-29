@@ -111,6 +111,20 @@ let%expect_test "powf" =
     (8 27 64) |}]
 ;;
 
+let%expect_test "exp log tanh sigmoid" =
+  let x = A.of_array ~shape:[| 3 |] [| 0.; 1.; -1. |] in
+  print_s [%sexp (A.to_array (A.exp x) : float array)];
+  print_s [%sexp (A.to_array (A.log (A.exp x)) : float array)];
+  print_s [%sexp (A.to_array (A.tanh x) : float array)];
+  print_s [%sexp (A.to_array (A.sigmoid x) : float array)];
+  [%expect
+    {|
+    (1 2.7182818284590451 0.36787944117144233)
+    (0 1 -1)
+    (0 0.76159415595576485 -0.76159415595576485)
+    (0.5 0.7310585786300049 0.2689414213699951) |}]
+;;
+
 let%expect_test "maximum minimum and comparisons" =
   let x = A.of_array ~shape:[| 4 |] [| -1.; 0.; 2.; 3. |] in
   let y = A.of_array ~shape:[| 4 |] [| 0.; 0.; 1.; 4. |] in

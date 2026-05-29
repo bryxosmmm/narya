@@ -20,6 +20,10 @@ val matmul : t -> t -> t
 val neg : t -> t
 val square : t -> t
 val powf : t -> float -> t
+val exp : t -> t
+val log : t -> t
+val tanh : t -> t
+val sigmoid : t -> t
 val relu : t -> t
 val sum : t -> t
 val mean : t -> t
