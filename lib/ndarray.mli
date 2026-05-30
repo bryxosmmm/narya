@@ -33,6 +33,7 @@ val log : t -> t
 val tanh : t -> t
 val sigmoid : t -> t
 val softmax : t -> t
+val softmax_axis : t -> axis:int -> t
 val maximum : t -> t -> t
 val minimum : t -> t -> t
 val gt : t -> t -> t
@@ -61,6 +62,8 @@ val max : t -> t
 val min : t -> t
 val sum_axis : ?keepdim:bool -> t -> axis:int -> t
 val mean_axis : ?keepdim:bool -> t -> axis:int -> t
+val max_axis : ?keepdim:bool -> t -> axis:int -> t
+val min_axis : ?keepdim:bool -> t -> axis:int -> t
 val sum_to_shape : t -> shape:int array -> t
 val reshape : t -> shape:int array -> t
 val unsqueeze : t -> axis:int -> t

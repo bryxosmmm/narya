@@ -152,6 +152,34 @@ let%expect_test "softmax is stable for large values" =
   [%expect {| (0.090030573170380462 0.24472847105479764 0.66524095577482178) |}]
 ;;
 
+let%expect_test "softmax_axis rows" =
+  let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 1.; 2.; 3. |] in
+  let y = A.softmax_axis x ~axis:1 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  print_s [%sexp (A.to_array (A.sum_axis y ~axis:1) : float array)];
+  [%expect
+    {|
+    ((2 3)
+     (0.090030573170380462 0.24472847105479764 0.66524095577482178
+      0.090030573170380462 0.24472847105479764 0.66524095577482178))
+    (0.99999999999999989 0.99999999999999989)
+    |}]
+;;
+
+let%expect_test "softmax_axis columns" =
+  let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |] in
+  let y = A.softmax_axis x ~axis:0 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  print_s [%sexp (A.to_array (A.sum_axis y ~axis:0) : float array)];
+  [%expect
+    {|
+    ((2 3)
+     (0.047425873177566788 0.047425873177566788 0.047425873177566788
+      0.95257412682243336 0.95257412682243336 0.95257412682243336))
+    (1.0000000000000002 1.0000000000000002 1.0000000000000002)
+    |}]
+;;
+
 let%expect_test "maximum minimum and comparisons" =
   let x = A.of_array ~shape:[| 4 |] [| -1.; 0.; 2.; 3. |] in
   let y = A.of_array ~shape:[| 4 |] [| 0.; 0.; 1.; 4. |] in
@@ -230,6 +258,34 @@ let%expect_test "mean_axis keepdim" =
   let y = A.mean_axis x ~axis:1 ~keepdim:true in
   print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
   [%expect {| ((2 1) (2 5)) |}]
+;;
+
+let%expect_test "max_axis and min_axis" =
+  let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 5.; 3.; 4.; 2.; 6. |] in
+  let max0 = A.max_axis x ~axis:0 in
+  let max1 = A.max_axis x ~axis:1 in
+  let min0 = A.min_axis x ~axis:0 in
+  let min1 = A.min_axis x ~axis:1 in
+  print_s [%sexp (A.shape max0 : int array), (A.to_array max0 : float array)];
+  print_s [%sexp (A.shape max1 : int array), (A.to_array max1 : float array)];
+  print_s [%sexp (A.shape min0 : int array), (A.to_array min0 : float array)];
+  print_s [%sexp (A.shape min1 : int array), (A.to_array min1 : float array)];
+  [%expect {|
+    ((3) (4 5 6))
+    ((2) (5 6))
+    ((3) (1 2 3))
+    ((2) (1 2)) |}]
+;;
+
+let%expect_test "max_axis and min_axis keepdim" =
+  let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 5.; 3.; 4.; 2.; 6. |] in
+  let max1 = A.max_axis x ~axis:1 ~keepdim:true in
+  let min0 = A.min_axis x ~axis:0 ~keepdim:true in
+  print_s [%sexp (A.shape max1 : int array), (A.to_array max1 : float array)];
+  print_s [%sexp (A.shape min0 : int array), (A.to_array min0 : float array)];
+  [%expect {|
+    ((2 1) (5 6))
+    ((1 3) (1 2 3)) |}]
 ;;
 
 let%expect_test "sum_to_shape vector broadcast grad" =
