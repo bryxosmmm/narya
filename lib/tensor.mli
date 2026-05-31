@@ -14,7 +14,6 @@ val requires_grad : t -> bool
 val op : t -> string
 val zero_grad : t -> unit
 val update : t -> f:(Ndarray.t -> Ndarray.t) -> unit
-
 val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
@@ -35,4 +34,18 @@ val mean : t -> t
 val sum_axis : ?keepdim:bool -> t -> axis:int -> t
 val mean_axis : ?keepdim:bool -> t -> axis:int -> t
 
+module Infix : sig
+  val ( + ) : t -> t -> t
+  val ( - ) : t -> t -> t
+  val ( * ) : t -> t -> t
+  val ( / ) : t -> t -> t
+  val ( ^ ) : t -> float -> t
+  val ( ~- ) : t -> t
+  val ( @ ) : t -> t -> t
+end
+
 val backward : t -> unit
+
+module Debug : sig
+  val to_dot : t -> string
+end
