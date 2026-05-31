@@ -6,18 +6,20 @@ type t =
   ; requires_grad : bool
   ; backward : Ndarray.t -> unit
   ; parents : t list
+  ; op : string
   }
 
 let value x = x.value
 let grad x = x.grad
 let grad_exn x = Option.value_exn x.grad
 let requires_grad x = x.requires_grad
+let op x = x.op
 let zero_grad x = x.grad <- None
 let update x ~f = x.value <- f x.value
 
 let of_ndarray ?(requires_grad = false) value =
   let grad = None in
-  { value; grad; requires_grad; backward = (fun _ -> ()); parents = [] }
+  { value; grad; requires_grad; backward = (fun _ -> ()); parents = []; op = "leaf" }
 ;;
 
 let create ?(requires_grad = false) ~shape v =
@@ -40,7 +42,7 @@ let add_grad x g =
     | Some old -> x.grad <- Some (old + g))
 ;;
 
-let unary x ~f ~df =
+let unary x ~op ~f ~df =
   let value = f x.value in
   let parents = [ x ] in
   let backward g = add_grad x (df x.value value g) in
@@ -49,10 +51,11 @@ let unary x ~f ~df =
   ; backward
   ; grad = None
   ; requires_grad = x.requires_grad
+  ; op
   }
 ;;
 
-let binary a b ~f ~fa ~fb =
+let binary a b ~op ~f ~fa ~fb =
   let value = f a.value b.value in
   let parents = [ a; b ] in
   let backward g =
@@ -64,18 +67,19 @@ let binary a b ~f ~fa ~fb =
   ; backward
   ; grad = None
   ; requires_grad = a.requires_grad || b.requires_grad
+  ; op
   }
 ;;
 
 let add a b =
   let open Ndarray in
   let open Infix in
-  binary a b ~f:( + ) ~fa:(fun _ _ _ g -> g) ~fb:(fun _ _ _ g -> g)
+  binary a b ~op:"add" ~f:( + ) ~fa:(fun _ _ _ g -> g) ~fb:(fun _ _ _ g -> g)
 ;;
 
 let neg a =
   let open Ndarray in
-  unary a ~f:neg ~df:(fun _ _ g -> neg g)
+  unary a ~op:"neg" ~f:neg ~df:(fun _ _ g -> neg g)
 ;;
 
 let relu a =
@@ -83,6 +87,7 @@ let relu a =
   let open Infix in
   unary
     a
+    ~op:"relu"
     ~f:(fun x -> maximum x (s 0.0))
     ~df:(fun x _ g -> (x > s 0.0) * g)
 ;;
@@ -90,13 +95,13 @@ let relu a =
 let sub a b =
   let open Ndarray in
   let open Infix in
-  binary a b ~f:( - ) ~fa:(fun _ _ _ g -> g) ~fb:(fun _ _ _ g -> neg g)
+  binary a b ~op:"sub" ~f:( - ) ~fa:(fun _ _ _ g -> g) ~fb:(fun _ _ _ g -> neg g)
 ;;
 
 let mul a b =
   let open Ndarray in
   let open Infix in
-  binary a b ~f:( * ) ~fa:(fun _ b _ g -> g * b) ~fb:(fun a _ _ g -> g * a)
+  binary a b ~op:"mul" ~f:( * ) ~fa:(fun _ b _ g -> g * b) ~fb:(fun a _ _ g -> g * a)
 ;;
 
 let div a b =
@@ -105,6 +110,7 @@ let div a b =
   binary
     a
     b
+    ~op:"div"
     ~f:( / )
     ~fa:(fun _ b _ g -> g / b)
     ~fb:(fun a b _ g -> s (-1.) * g * a / (b * b))
@@ -116,6 +122,7 @@ let matmul a b =
   binary
     a
     b
+    ~op:"matmul"
     ~f:( @ )
     ~fa:(fun _ b _ g -> g @ transpose b)
     ~fb:(fun a _ _ g -> transpose a @ g)
@@ -123,13 +130,13 @@ let matmul a b =
 
 let sum a =
   let open Ndarray in
-  unary a ~f:sum ~df:(fun x _ g -> broadcast_to g ~shape:(shape x))
+  unary a ~op:"sum" ~f:sum ~df:(fun x _ g -> broadcast_to g ~shape:(shape x))
 ;;
 
 let mean a =
   let open Ndarray in
   let open Infix in
-  unary a ~f:mean ~df:(fun x _ g ->
+  unary a ~op:"mean" ~f:mean ~df:(fun x _ g ->
     let n = numel x |> Float.of_int |> s in
     broadcast_to g ~shape:(shape x) / n)
 ;;
@@ -137,7 +144,7 @@ let mean a =
 let powf a p =
   let open Ndarray in
   let open Infix in
-  unary a ~f:(fun x -> x ^ p) ~df:(fun x _ g -> g * s p * (x ^ (p -. 1.)))
+  unary a ~op:"powf" ~f:(fun x -> x ^ p) ~df:(fun x _ g -> g * s p * (x ^ (p -. 1.)))
 ;;
 
 let square x = powf x 2.
@@ -145,31 +152,31 @@ let square x = powf x 2.
 let exp x =
   let open Ndarray in
   let open Infix in
-  unary x ~f:exp ~df:(fun _ v g -> g * v)
+  unary x ~op:"exp" ~f:exp ~df:(fun _ v g -> g * v)
 ;;
 
 let log x =
   let open Ndarray in
   let open Infix in
-  unary x ~f:log ~df:(fun x _ g -> g / x)
+  unary x ~op:"log" ~f:log ~df:(fun x _ g -> g / x)
 ;;
 
 let tanh x =
   let open Ndarray in
   let open Infix in
-  unary x ~f:tanh ~df:(fun _ v g -> g * (s 1. - powf v 2.))
+  unary x ~op:"tanh" ~f:tanh ~df:(fun _ v g -> g * (s 1. - powf v 2.))
 ;;
 
 let sigmoid x =
   let open Ndarray in
   let open Infix in
-  unary x ~f:sigmoid ~df:(fun _ v g -> g * v * (s 1. - v))
+  unary x ~op:"sigmoid" ~f:sigmoid ~df:(fun _ v g -> g * v * (s 1. - v))
 ;;
 
 let softmax x =
   let open Ndarray in
   let open Infix in
-  unary x ~f:softmax ~df:(fun _ v g ->
+  unary x ~op:"softmax" ~f:softmax ~df:(fun _ v g ->
     let dot = sum (g * v) in
     v * (g - dot))
 ;;
@@ -197,6 +204,7 @@ let sum_axis ?(keepdim = false) a ~axis =
   let open Ndarray in
   unary
     a
+    ~op:"sum_axis"
     ~f:(fun x -> sum_axis ~keepdim x ~axis)
     ~df:(fun x _ g ->
       let g = if keepdim then g else unsqueeze g ~axis in
@@ -208,9 +216,18 @@ let mean_axis ?(keepdim = false) a ~axis =
   let open Infix in
   unary
     a
+    ~op:"mean_axis"
     ~f:(fun x -> mean_axis ~keepdim x ~axis)
     ~df:(fun x _ g ->
       let n = (shape x).(axis) |> Float.of_int |> s in
       let g = if keepdim then g else unsqueeze g ~axis in
       broadcast_to g ~shape:(shape x) / n)
+;;
+
+let softmax_axis x ~axis =
+  let open Ndarray in
+  let open Infix in
+  unary x ~op:"softmax_axis" ~f:(softmax_axis ~axis) ~df:(fun x v g ->
+    let dot = sum_axis (g * v) ~keepdim:true ~axis in
+    v * (g - dot))
 ;;

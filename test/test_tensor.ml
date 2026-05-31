@@ -79,6 +79,55 @@ let%expect_test "softmax weighted backward" =
     {| ((3) (-0.20170911815463108 -0.30357375945943449 0.50528287761406576)) |}]
 ;;
 
+let%expect_test "softmax_axis forward" =
+  let x =
+    T.of_ndarray
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 1000.; 1001.; 1002. |])
+  in
+  let y = T.softmax_axis x ~axis:1 in
+  print_tensor_value y;
+  print_s [%sexp (A.shape (A.sum_axis (T.value y) ~axis:1) : int array), (A.to_array (A.sum_axis (T.value y) ~axis:1) : float array)];
+  [%expect
+    {|
+    ((2 3)
+     (0.090030573170380462 0.24472847105479764 0.66524095577482178
+      0.090030573170380462 0.24472847105479764 0.66524095577482178))
+    ((2) (0.99999999999999989 0.99999999999999989)) |}]
+;;
+
+let%expect_test "softmax_axis backward through row sums is zero" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.sum (T.softmax_axis x ~axis:1) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect
+    {|
+    ((2 3)
+     (9.9954015253956266E-18 2.7170318334634751E-17 7.3856582602485264E-17
+      9.9954015253956266E-18 2.7170318334634751E-17 7.3856582602485264E-17)) |}]
+;;
+
+let%expect_test "softmax_axis weighted backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let w = T.of_ndarray (A.of_array ~shape:[| 3 |] [| 1.; 2.; 4. |]) in
+  let y = T.sum (T.mul (T.softmax_axis x ~axis:1) w) in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect
+    {|
+    ((2 3)
+     (-0.20170911815463108 -0.30357375945943449 0.50528287761406576
+      -0.20170911815463108 -0.30357375945943449 0.50528287761406576)) |}]
+;;
+
 let%expect_test "scalar add value" =
   let x = T.scalar 2.0 in
   let y = T.scalar 3.0 in
