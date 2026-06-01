@@ -135,6 +135,14 @@ let%expect_test "scalar add value" =
   [%expect {| (() (5)) |}]
 ;;
 
+let%expect_test "item" =
+  print_s [%sexp (T.item (T.scalar 3.0) : float)];
+  print_s [%sexp (T.item (T.ones [| 1; 1 |]) : float)];
+  [%expect {|
+    3
+    1 |}]
+;;
+
 let%expect_test "scalar neg value" =
   let x = T.scalar 2.0 in
   print_tensor_value (T.neg x);
@@ -406,6 +414,17 @@ let%expect_test "powf forward and backward" =
   [%expect {|
     (() (8))
     (() (12)) |}]
+;;
+
+let%expect_test "sqrt forward and backward" =
+  let x = T.scalar ~requires_grad:true 4.0 in
+  let y = T.sqrt x in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (2))
+    (() (0.25)) |}]
 ;;
 
 let%expect_test "sum_axis backward" =

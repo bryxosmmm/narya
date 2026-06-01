@@ -14,6 +14,7 @@ let create_node ~value ~parents ~requires_grad ~backward ~op =
 ;;
 
 let value x = x.value
+let item x = Ndarray.item x.value
 let grad x = x.grad
 let grad_exn x = Option.value_exn x.grad
 let requires_grad x = x.requires_grad
@@ -214,6 +215,7 @@ let powf a p =
 ;;
 
 let square x = powf x 2.
+let sqrt x = powf x 0.5
 
 let exp x =
   let open Ndarray in

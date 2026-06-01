@@ -8,6 +8,10 @@ val scalar : float -> t
 val s : float -> t
 val zeros : int array -> t
 val ones : int array -> t
+val seed : int -> unit
+val rand : int array -> t
+val randn : int array -> t
+val uniform : int array -> low:float -> high:float -> t
 val copy : t -> t
 val zeros_like : t -> t
 val ones_like : t -> t
@@ -16,6 +20,7 @@ val to_array : t -> float array
 val shape : t -> int array
 val ndim : t -> int
 val numel : t -> int
+val item : t -> float
 val get : t -> int array -> float
 val set : t -> int array -> float -> unit
 val update : t -> int array -> f:(float -> float) -> unit

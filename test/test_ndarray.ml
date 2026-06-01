@@ -9,6 +9,16 @@ let%expect_test "create zeros" =
   [%expect {| (0 0 0 0) |}]
 ;;
 
+let%expect_test "item accepts any single-element shape" =
+  print_s [%sexp (A.item (A.scalar 3.0) : float)];
+  print_s [%sexp (A.item (A.ones [| 1 |]) : float)];
+  print_s [%sexp (A.item (A.ones [| 1; 1 |]) : float)];
+  [%expect {|
+    3
+    1
+    1 |}]
+;;
+
 let%expect_test "scalar shape and sum" =
   let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |] in
   let s = A.sum x in
@@ -212,6 +222,39 @@ let%expect_test "arange" =
   let x = A.arange 5 in
   print_s [%sexp (A.shape x : int array), (A.to_array x : float array)];
   [%expect {| ((5) (0 1 2 3 4)) |}]
+;;
+
+let%expect_test "rand is seeded and has requested shape" =
+  A.seed 42;
+  let x = A.rand [| 2; 2 |] in
+  print_s [%sexp (A.shape x : int array), (A.to_array x : float array)];
+  [%expect {|
+    ((2 2)
+     (0.44476479052734319 0.77535359458780961 0.3732967599463588
+      0.33121197325164242))
+    |}]
+;;
+
+let%expect_test "uniform uses requested bounds" =
+  A.seed 42;
+  let x = A.uniform [| 2; 2 |] ~low:(-1.0) ~high:1.0 in
+  print_s [%sexp (A.shape x : int array), (A.to_array x : float array)];
+  [%expect {|
+    ((2 2)
+     (-0.11047041894531362 0.55070718917561923 -0.25340648010728239
+      -0.33757605349671516))
+    |}]
+;;
+
+let%expect_test "randn is seeded and has requested shape" =
+  A.seed 42;
+  let x = A.randn [| 2; 2 |] in
+  print_s [%sexp (A.shape x : int array), (A.to_array x : float array)];
+  [%expect {|
+    ((2 2)
+     (0.20192715549991924 -0.68565274669893117 -0.4388778486332468
+      -1.0441454373091814))
+    |}]
 ;;
 
 let%expect_test "eye" =

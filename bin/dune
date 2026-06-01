@@ -2,3 +2,13 @@
  (public_name narya)
  (name main)
  (libraries narya core stdio))
+
+(executable
+ (public_name graph_debug)
+ (name graph_debug)
+ (libraries narya core stdio))
+
+(executable
+ (public_name train_linear)
+ (name train_linear)
+ (libraries narya core stdio))

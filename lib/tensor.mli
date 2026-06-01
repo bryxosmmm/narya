@@ -8,6 +8,7 @@ val ones : ?requires_grad:bool -> int array -> t
 val scalar : ?requires_grad:bool -> float -> t
 val of_ndarray : ?requires_grad:bool -> Ndarray.t -> t
 val value : t -> Ndarray.t
+val item : t -> float
 val grad : t -> Ndarray.t option
 val grad_exn : t -> Ndarray.t
 val requires_grad : t -> bool
@@ -22,6 +23,7 @@ val matmul : t -> t -> t
 val neg : t -> t
 val square : t -> t
 val powf : t -> float -> t
+val sqrt : t -> t
 val exp : t -> t
 val log : t -> t
 val tanh : t -> t

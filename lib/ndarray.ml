@@ -79,6 +79,32 @@ let scalar v = create [||] v
 let s = scalar
 let zeros shape = create shape 0.0
 let ones shape = create shape 1.0
+let seed = Stdlib.Random.init
+
+let rand shape =
+  let shape = Array.copy shape in
+  let data = Array.init (numel' shape) ~f:(fun _ -> Stdlib.Random.float 1.0) in
+  unsafe_make ~shape ~data
+;;
+
+let uniform shape ~low ~high =
+  let shape = Array.copy shape in
+  let data =
+    Array.init (numel' shape) ~f:(fun _ -> low +. (Stdlib.Random.float 1.0 *. (high -. low)))
+  in
+  unsafe_make ~shape ~data
+;;
+
+let randn shape =
+  let shape = Array.copy shape in
+  let data =
+    Array.init (numel' shape) ~f:(fun _ ->
+      let u1 = Float.max Float.epsilon_float (Stdlib.Random.float 1.0) in
+      let u2 = Stdlib.Random.float 1.0 in
+      Float.sqrt (-2.0 *. Float.log u1) *. Float.cos (2.0 *. Float.pi *. u2))
+  in
+  unsafe_make ~shape ~data
+;;
 
 let of_array ~shape data =
   let shape = Array.copy shape in
@@ -141,6 +167,11 @@ let index_flat x flat =
 let get x idx = x.data.(index x idx)
 let set x idx v = x.data.(index x idx) <- v
 let get_flat x flat = x.data.(index_flat x flat)
+
+let item x =
+  if x.numel <> 1 then invalid_arg "Ndarray.item: expected exactly one element";
+  get_flat x 0
+;;
 
 let get2 x i j =
   x.data.((i * x.strides.(0)) + (j * x.strides.(1)) + x.offset)
