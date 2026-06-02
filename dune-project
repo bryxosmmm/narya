@@ -8,22 +8,28 @@
  (enabled_for ocaml))
 
 (source
- (github username/reponame))
+ (github bryxosmmm/narya))
 
-(authors "Author Name <author@example.com>")
+(authors "bryxosmmm <bryxosmmm@proton.me>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "bryxosmmm <bryxosmmm@proton.me>")
 
-(license LICENSE)
+(license MIT)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/bryxosmmm/narya)
 
 (package
  (name narya)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml)
+ (synopsis "Experimental tensor and autodiff library in OCaml")
+ (description
+  "Narya is an experimental machine learning library written in OCaml. It implements numerical arrays, tensors, reverse-mode automatic differentiation, and basic optimizers from first principles.")
+ (depends
+  (ocaml (>= 5.0))
+  dune
+  base
+  core
+  stdio
+  ppx_jane
+  ppx_expect)
  (tags
-  ("add topics" "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
+  (ocaml machine-learning tensors autodiff optimizers)))
