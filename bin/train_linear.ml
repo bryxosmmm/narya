@@ -1,5 +1,6 @@
 open Base
 open Narya
+open Optim
 module T = Tensor
 module N = Ndarray
 
@@ -13,28 +14,17 @@ let w =
   |> T.of_ndarray ~requires_grad:true
 ;;
 
-let u = N.zeros [| 1; 1 |] |> T.of_ndarray
 let b = N.s 0. |> T.of_ndarray ~requires_grad:true
-let lr = N.s 1e-4
-let beta = N.s 0.1
-
-let momentum v g =
-  let open N.Infix in
-  (T.value v * beta) + (lr * g)
-;;
+let opt = RMSProp.create ~lr:1e-4 ~decay:0.8 ~eps:1e-9 [ b; w ]
 
 let () =
   let open T.Infix in
   for step = 0 to 100000 do
-    T.zero_grad w;
-    T.zero_grad b;
+    RMSProp.zero_grad opt;
     let y' = (x @ w) + b in
     let loss = (y - y') ^ 2. |> T.mean in
     T.backward loss;
-    let gw = T.grad w |> Option.value_exn in
-    let gb = T.grad b |> Option.value_exn in
-    T.update w ~f:N.Infix.(fun v -> v - momentum mv gw);
-    T.update b ~f:N.Infix.(fun v -> v - (lr * gb));
+    RMSProp.step opt;
     if step % 1000 = 0
     then
       Stdio.printf
