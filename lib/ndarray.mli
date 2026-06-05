@@ -71,6 +71,8 @@ val max_axis : ?keepdim:bool -> t -> axis:int -> t
 val min_axis : ?keepdim:bool -> t -> axis:int -> t
 val sum_to_shape : t -> shape:int array -> t
 val reshape : t -> shape:int array -> t
+val concat : t array -> axis:int -> t
+val stack : t array -> axis:int -> t
 val unsqueeze : t -> axis:int -> t
 val transpose : t -> t
 val matmul : t -> t -> t

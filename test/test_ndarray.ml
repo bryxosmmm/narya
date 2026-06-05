@@ -33,6 +33,63 @@ let%expect_test "reshape preserves logical row-major order" =
   [%expect {| (1 2 3 4 5 6) |}]
 ;;
 
+let%expect_test "concat along axis 0" =
+  let a = A.of_array ~shape:[| 2; 2 |] [| 1.; 2.; 3.; 4. |] in
+  let b = A.of_array ~shape:[| 1; 2 |] [| 5.; 6. |] in
+  let y = A.concat [| a; b |] ~axis:0 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  [%expect {| ((3 2) (1 2 3 4 5 6)) |}]
+;;
+
+let%expect_test "concat along axis 1" =
+  let a = A.of_array ~shape:[| 2; 2 |] [| 1.; 2.; 3.; 4. |] in
+  let b = A.of_array ~shape:[| 2; 1 |] [| 5.; 6. |] in
+  let y = A.concat [| a; b |] ~axis:1 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  [%expect {| ((2 3) (1 2 5 3 4 6)) |}]
+;;
+
+let%expect_test "concat rejects empty input" =
+  print_s [%sexp (Exn.does_raise (fun () -> A.concat [||] ~axis:0) : bool)];
+  [%expect {| true |}]
+;;
+
+let%expect_test "concat rejects incompatible shapes" =
+  let a = A.zeros [| 2; 2 |] in
+  let b = A.zeros [| 2; 3 |] in
+  print_s [%sexp (Exn.does_raise (fun () -> A.concat [| a; b |] ~axis:0) : bool)];
+  [%expect {| true |}]
+;;
+
+let%expect_test "stack along axis 0" =
+  let a = A.of_array ~shape:[| 3 |] [| 1.; 2.; 3. |] in
+  let b = A.of_array ~shape:[| 3 |] [| 4.; 5.; 6. |] in
+  let y = A.stack [| a; b |] ~axis:0 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  [%expect {| ((2 3) (1 2 3 4 5 6)) |}]
+;;
+
+let%expect_test "stack along axis 1" =
+  let a = A.of_array ~shape:[| 3 |] [| 1.; 2.; 3. |] in
+  let b = A.of_array ~shape:[| 3 |] [| 4.; 5.; 6. |] in
+  let y = A.stack [| a; b |] ~axis:1 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  [%expect {| ((3 2) (1 4 2 5 3 6)) |}]
+;;
+
+let%expect_test "stack scalars" =
+  let y = A.stack [| A.s 1.; A.s 2.; A.s 3. |] ~axis:0 in
+  print_s [%sexp (A.shape y : int array), (A.to_array y : float array)];
+  [%expect {| ((3) (1 2 3)) |}]
+;;
+
+let%expect_test "stack rejects incompatible shapes" =
+  let a = A.zeros [| 2 |] in
+  let b = A.zeros [| 1; 2 |] in
+  print_s [%sexp (Exn.does_raise (fun () -> A.stack [| a; b |] ~axis:0) : bool)];
+  [%expect {| true |}]
+;;
+
 let%expect_test "transpose logical order" =
   let x = A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |] in
   let y = A.transpose x in

@@ -83,14 +83,17 @@ let seed = Stdlib.Random.init
 
 let rand shape =
   let shape = Array.copy shape in
-  let data = Array.init (numel' shape) ~f:(fun _ -> Stdlib.Random.float 1.0) in
+  let data =
+    Array.init (numel' shape) ~f:(fun _ -> Stdlib.Random.float 1.0)
+  in
   unsafe_make ~shape ~data
 ;;
 
 let uniform shape ~low ~high =
   let shape = Array.copy shape in
   let data =
-    Array.init (numel' shape) ~f:(fun _ -> low +. (Stdlib.Random.float 1.0 *. (high -. low)))
+    Array.init (numel' shape) ~f:(fun _ ->
+      low +. (Stdlib.Random.float 1.0 *. (high -. low)))
   in
   unsafe_make ~shape ~data
 ;;
@@ -169,7 +172,8 @@ let set x idx v = x.data.(index x idx) <- v
 let get_flat x flat = x.data.(index_flat x flat)
 
 let item x =
-  if x.numel <> 1 then invalid_arg "Ndarray.item: expected exactly one element";
+  if x.numel <> 1
+  then invalid_arg "Ndarray.item: expected exactly one element";
   get_flat x 0
 ;;
 
@@ -209,6 +213,34 @@ let reshape x ~shape =
   }
 ;;
 
+let concat xs ~axis =
+  if Array.is_empty xs then invalid_arg "Ndarray.concat: empty input";
+  let first = xs.(0) in
+  if axis < 0 || axis >= first.ndim
+  then invalid_arg "Ndarray.concat: axis out of bounds";
+  let axis_size = ref 0 in
+  Array.iter xs ~f:(fun x ->
+    if x.ndim <> first.ndim then invalid_arg "Ndarray.concat: rank mismatch";
+    for i = 0 to first.ndim - 1 do
+      if i <> axis && x.shape.(i) <> first.shape.(i)
+      then invalid_arg "Ndarray.concat: shape mismatch"
+    done;
+    axis_size := !axis_size + x.shape.(axis));
+  let shape = Array.copy first.shape in
+  shape.(axis) <- !axis_size;
+  let y = zeros shape in
+  let axis_offset = ref 0 in
+  Array.iter xs ~f:(fun x ->
+    for flat = 0 to x.numel - 1 do
+      let idx = unravel_index x.shape flat in
+      let idx' = Array.copy idx in
+      idx'.(axis) <- idx'.(axis) + !axis_offset;
+      set y idx' (get x idx)
+    done;
+    axis_offset := !axis_offset + x.shape.(axis));
+  y
+;;
+
 let unsqueeze x ~axis =
   if axis < 0 || axis > x.ndim
   then invalid_arg "Ndarray.unsqueeze: axis out of bounds";
@@ -230,6 +262,11 @@ let unsqueeze x ~axis =
       else x.strides.(i - 1))
   in
   { x with shape; ndim; strides; numel = x.numel }
+;;
+
+let stack xs ~axis =
+  if Array.is_empty xs then invalid_arg "Ndarray.stack: empty input";
+  Array.map xs ~f:(unsqueeze ~axis) |> concat ~axis
 ;;
 
 let transpose x =
