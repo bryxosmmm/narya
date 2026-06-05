@@ -12,3 +12,8 @@
  (public_name train_linear)
  (name train_linear)
  (libraries narya core stdio))
+
+(executable
+ (public_name two_moons)
+ (name two_moons)
+ (libraries narya core stdio))

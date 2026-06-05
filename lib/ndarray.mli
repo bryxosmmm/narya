@@ -17,6 +17,8 @@ val zeros_like : t -> t
 val ones_like : t -> t
 val of_array : shape:int array -> float array -> t
 val to_array : t -> float array
+val to_string : t -> string
+val print : t -> unit
 val shape : t -> int array
 val ndim : t -> int
 val numel : t -> int

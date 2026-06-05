@@ -72,7 +72,7 @@ end = struct
       match T.grad st.p with
       | None -> ()
       | Some g ->
-        st.v <- (beta * st.v) + (alpha * g);
+        st.v <- (beta * st.v) + ((N.s 1. - beta) * (alpha * g));
         T.update st.p ~f:N.Infix.(fun w -> w - st.v))
   ;;
 end
@@ -125,5 +125,73 @@ end = struct
             N.Infix.(
               let u = (st.v + eps) ^ -0.5 in
               fun w -> w - (alpha * g * u)))
+  ;;
+end
+
+module Adam : sig
+  type t
+
+  include S with type t := t
+
+  val create
+    :  lr:float
+    -> beta1:float
+    -> beta2:float
+    -> eps:float
+    -> T.t list
+    -> t
+end = struct
+  type s =
+    { p : T.t
+    ; mutable v : N.t
+    ; mutable m : N.t
+    }
+
+  type t =
+    { state : s list
+    ; alpha : N.t
+    ; beta1 : N.t
+    ; beta2 : N.t
+    ; eps : N.t
+    ; mutable step_cnt : int
+    }
+
+  let create ~lr ~beta1 ~beta2 ~eps params =
+    let state =
+      List.map params ~f:(fun p ->
+        let v = p |> T.value |> N.zeros_like in
+        let m = p |> T.value |> N.zeros_like in
+        { p; v; m })
+    in
+    let alpha = N.s lr in
+    let beta1 = N.s beta1 in
+    let beta2 = N.s beta2 in
+    let eps = N.s eps in
+    let step_cnt = 0 in
+    { state; alpha; beta1; beta2; eps; step_cnt }
+  ;;
+
+  let zero_grad { state; _ } =
+    List.iter state ~f:(fun x -> T.zero_grad x.p)
+  ;;
+
+  let step o =
+    o.step_cnt <- o.step_cnt + 1;
+    let k = Float.of_int o.step_cnt in
+    let open N.Infix in
+    List.iter o.state ~f:(fun st ->
+      match T.grad st.p with
+      | None -> ()
+      | Some g ->
+        st.m <- (o.beta1 * st.m) + ((N.s 1. - o.beta1) * g);
+        st.v <- (o.beta2 * st.v) + ((N.s 1. - o.beta2) * (g ^ 2.));
+        T.update
+          st.p
+          ~f:
+            N.Infix.(
+              let m' = st.m / (N.s 1. - (o.beta1 ^ k)) in
+              let v' = st.v / (N.s 1. - (o.beta2 ^ k)) in
+              let u = (v' ^ 0.5) + o.eps in
+              fun w -> w - (o.alpha * m' / u)))
   ;;
 end

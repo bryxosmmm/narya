@@ -351,6 +351,25 @@ let%expect_test "relu backward uses positive mask" =
   [%expect {| ((5) (0 0 0 1 1)) |}]
 ;;
 
+let%expect_test "transpose forward" =
+  let x = T.of_ndarray (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |]) in
+  let y = T.transpose x in
+  print_tensor_value y;
+  [%expect {| ((3 2) (1 4 2 5 3 6)) |}]
+;;
+
+let%expect_test "transpose backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |])
+  in
+  let y = T.transpose x |> T.sum in
+  T.backward y;
+  print_tensor_grad x;
+  [%expect {| ((2 3) (1 1 1 1 1 1)) |}]
+;;
+
 let%expect_test "matmul forward" =
   let a = T.of_ndarray (A.of_array ~shape:[| 2; 3 |] [| 1.; 2.; 3.; 4.; 5.; 6. |]) in
   let b = T.of_ndarray (A.of_array ~shape:[| 3; 2 |] [| 7.; 8.; 9.; 10.; 11.; 12. |]) in

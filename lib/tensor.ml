@@ -166,6 +166,14 @@ let matmul a b =
     ~fb:(fun a _ _ g -> transpose a @ g)
 ;;
 
+let transpose a =
+  Node.unary
+    a
+    ~op:"transpose"
+    ~f:Ndarray.transpose
+    ~df:(fun _ _ g -> Ndarray.transpose g)
+;;
+
 let sum a =
   let open Ndarray in
   Node.unary a ~op:"sum" ~f:sum ~df:(fun x _ g ->

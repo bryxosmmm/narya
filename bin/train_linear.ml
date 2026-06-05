@@ -2,14 +2,16 @@ open Base
 open Narya
 module N = Ndarray
 module T = Tensor
-module O = Optim.SGDM
+module O = Optim.Adam
 
 let seed = 42
 let num_samples = 500
-let num_steps = 10_000
+let num_steps = 20_000
 let log_every = 1000
-let learning_rate = 1e-3
-let momentum = 0.9
+let learning_rate = 1e-4
+let beta1 = 0.9
+let beta2 = 0.999
+let adam_eps = 1e-8
 let a = 2.0
 let c = 1.0
 let eps = 1e-12
@@ -65,8 +67,10 @@ let () =
   N.seed seed;
   let x, y = make_dataset num_samples in
   let w, b = create_model () in
-  let optimizer = O.create ~lr:learning_rate ~momentum [ w; b ] in
-  Stdio.printf "Training y = %.1fx + %.1f with SGDM\n%!" a c;
+  let optimizer =
+    O.create ~lr:learning_rate ~beta1 ~beta2 ~eps:adam_eps [ w; b ]
+  in
+  Stdio.printf "Training y = %.1fx + %.1f with Adam\n%!" a c;
   for step = 0 to num_steps do
     let loss = train_step optimizer ~x ~y ~w ~b in
     if step % log_every = 0 then log_step step loss ~w ~b

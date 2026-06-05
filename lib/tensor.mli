@@ -20,6 +20,7 @@ val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val matmul : t -> t -> t
+val transpose : t -> t
 val neg : t -> t
 val square : t -> t
 val powf : t -> float -> t

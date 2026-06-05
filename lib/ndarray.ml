@@ -187,6 +187,18 @@ let update x idx ~f =
 ;;
 
 let to_array x = Array.init x.numel ~f:(fun i -> get_flat x i)
+
+let format_array f xs =
+  xs |> Array.map ~f |> String.concat_array ~sep:"; "
+;;
+
+let to_string x =
+  let shape = format_array Int.to_string x.shape in
+  let data = format_array Float.to_string (to_array x) in
+  [%string "Ndarray(shape=[%{shape}], data=[%{data}])"]
+;;
+
+let print x = Stdio.print_endline (to_string x)
 let is_contiguous x = same_shape x.strides (strides' x.shape)
 let copy x = unsafe_make ~shape:(Array.copy x.shape) ~data:(to_array x)
 
