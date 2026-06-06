@@ -35,6 +35,7 @@ val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val powf : t -> float -> t
+val abs : t -> t
 val exp : t -> t
 val log : t -> t
 val tanh : t -> t

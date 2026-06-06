@@ -50,6 +50,22 @@ let%expect_test "sigmoid forward and backward" =
     (() (0.25)) |}]
 ;;
 
+let%expect_test "comparisons return non-grad masks" =
+  let open T.Infix in
+  let x = T.of_ndarray ~requires_grad:true (A.of_array ~shape:[| 3 |] [| -1.; 0.; 1. |]) in
+  let zero = T.scalar 0.0 in
+  let y = x > zero in
+  print_tensor_value y;
+  print_s [%sexp (T.requires_grad y : bool)];
+  print_s [%sexp (T.op y : string)];
+  print_tensor_value (x <= zero);
+  [%expect {|
+    ((3) (0 0 1))
+    false
+    gt
+    ((3) (1 1 0)) |}]
+;;
+
 let%expect_test "softmax forward" =
   let x = T.of_ndarray (A.of_array ~shape:[| 3 |] [| 1.; 2.; 3. |]) in
   let y = T.softmax x in
@@ -444,6 +460,21 @@ let%expect_test "sqrt forward and backward" =
   [%expect {|
     (() (2))
     (() (0.25)) |}]
+;;
+
+let%expect_test "abs forward and backward" =
+  let x =
+    T.of_ndarray
+      ~requires_grad:true
+      (A.of_array ~shape:[| 3 |] [| -2.; 0.; 3. |])
+  in
+  let y = T.sum (T.abs x) in
+  T.backward y;
+  print_tensor_value y;
+  print_tensor_grad x;
+  [%expect {|
+    (() (5))
+    ((3) (-1 0 1)) |}]
 ;;
 
 let%expect_test "sum_axis backward" =

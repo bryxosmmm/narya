@@ -349,6 +349,7 @@ let sub a b = map2 a b ~f:( -. )
 let mul a b = map2 a b ~f:( *. )
 let div a b = map2 a b ~f:( /. )
 let powf a p = map a ~f:(fun x -> Float.(x ** p))
+let abs a = map a ~f:Float.abs
 let exp a = map a ~f:Float.exp
 let log a = map a ~f:Float.log
 let tanh a = map a ~f:Float.tanh

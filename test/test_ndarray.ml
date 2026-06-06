@@ -178,6 +178,12 @@ let%expect_test "powf" =
     (8 27 64) |}]
 ;;
 
+let%expect_test "abs" =
+  let x = A.of_array ~shape:[| 4 |] [| -2.; -0.; 0.; 3. |] in
+  print_s [%sexp (A.to_array (A.abs x) : float array)];
+  [%expect {| (2 0 0 3) |}]
+;;
+
 let%expect_test "exp log tanh sigmoid" =
   let x = A.of_array ~shape:[| 3 |] [| 0.; 1.; -1. |] in
   print_s [%sexp (A.to_array (A.exp x) : float array)];

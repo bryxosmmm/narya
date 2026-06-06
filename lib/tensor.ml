@@ -225,6 +225,12 @@ let powf a p =
 let square x = powf x 2.
 let sqrt x = powf x 0.5
 
+let abs x =
+  let open Ndarray in
+  let open Infix in
+  Node.unary x ~op:"abs" ~f:abs ~df:(fun x _ g -> g * ((x > s 0.0) - (x < s 0.0)))
+;;
+
 let exp x =
   let open Ndarray in
   let open Infix in
@@ -276,12 +282,30 @@ let softmax_axis x ~axis =
     v * (g - dot))
 ;;
 
+let cmp a b ~op ~f =
+  create_node
+    ~value:(f a.value b.value)
+    ~parents:[]
+    ~requires_grad:false
+    ~backward:(fun _ -> ())
+    ~op
+;;
+
+let gt a b = cmp a b ~op:"gt" ~f:Ndarray.gt
+let ge a b = cmp a b ~op:"ge" ~f:Ndarray.ge
+let lt a b = cmp a b ~op:"lt" ~f:Ndarray.lt
+let le a b = cmp a b ~op:"le" ~f:Ndarray.le
+
 module Infix = struct
   let ( + ) = add
   let ( - ) = sub
   let ( * ) = mul
   let ( / ) = div
   let ( ^ ) = powf
+  let ( > ) = gt
+  let ( >= ) = ge
+  let ( < ) = lt
+  let ( <= ) = le
   let ( ~- ) = neg
   let ( @ ) = matmul
 end

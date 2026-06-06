@@ -25,12 +25,17 @@ val neg : t -> t
 val square : t -> t
 val powf : t -> float -> t
 val sqrt : t -> t
+val abs : t -> t
 val exp : t -> t
 val log : t -> t
 val tanh : t -> t
 val sigmoid : t -> t
 val softmax : t -> t
 val softmax_axis : t -> axis:int -> t
+val gt : t -> t -> t
+val ge : t -> t -> t
+val lt : t -> t -> t
+val le : t -> t -> t
 val relu : t -> t
 val sum : t -> t
 val mean : t -> t
@@ -43,6 +48,10 @@ module Infix : sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val ( ^ ) : t -> float -> t
+  val ( > ) : t -> t -> t
+  val ( >= ) : t -> t -> t
+  val ( < ) : t -> t -> t
+  val ( <= ) : t -> t -> t
   val ( ~- ) : t -> t
   val ( @ ) : t -> t -> t
 end

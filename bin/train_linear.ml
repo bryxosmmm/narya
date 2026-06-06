@@ -27,7 +27,7 @@ let make_dataset n =
 
 let create_model () =
   let w =
-    N.Infix.(N.randn [| 1; 1 |] * N.s 0.01)
+    N.Infix.(N.randn [| 1; 1 |] * N.s 0.1)
     |> T.of_ndarray ~requires_grad:true
   in
   let b = N.s 0. |> T.of_ndarray ~requires_grad:true in
